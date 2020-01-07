@@ -1,10 +1,12 @@
 const path = require('path')
 const express = require('express')
+const aws = require('aws-sdk')
 const hbs = require('hbs')
 const geocode = require('./utils/geocode')
 const forecast = require('./utils/forecast')
 
 const app = express()
+
 const port = process.env.PORT || 3000
 
 // Define paths for Express config
@@ -16,9 +18,49 @@ const partialsPath = path.join(__dirname, '../templates/partials')
 app.set('view engine', 'hbs')
 app.set('views', viewsPath)
 hbs.registerPartials(partialsPath)
+app.engine('html', require('ejs').renderFile)
+
+const S3_BUCKET = process.env.S3_BUCKET
 
 // Setup static directory to serve
 app.use(express.static(publicDirectoryPath))
+
+app.get('/account', (req, res) => res.render('account.html'))
+
+app.get('/sign-s3', (req, res) => {
+    const s3 = new aws.S3();
+    const fileName = req.query['file-name'];
+    const fileType = req.query['file-type'];
+    const s3Params = {
+      Bucket: S3_BUCKET,
+      Key: fileName,
+      Expires: 60,
+      ContentType: fileType,
+      ACL: 'public-read'
+    };
+  
+    s3.getSignedUrl('putObject', s3Params, (err, data) => {
+      if(err){
+        console.log(err);
+        return res.end();
+      }
+      const returnData = {
+        signedRequest: data,
+        url: `https://${S3_BUCKET}.s3.amazonaws.com/${fileName}`
+      };
+      res.write(JSON.stringify(returnData));
+      res.end();
+    });
+  });
+  
+  /*
+   * Respond to POST requests to /submit_form.
+   * This function needs to be completed to handle the information in
+   * a way that suits your application.
+   */
+  app.post('/save-details', (req, res) => {
+    // TODO: Read POSTed form data and do something useful
+  });
 
 app.get('', (req, res) =>{
     res.render('index', {
