@@ -2,6 +2,7 @@ const path = require('path')
 const express = require('express')
 const aws = require('aws-sdk')
 const hbs = require('hbs')
+const sharp = require('sharp')
 const geocode = require('./utils/geocode')
 const forecast = require('./utils/forecast')
 
@@ -59,8 +60,21 @@ app.get('/sign-s3', (req, res) => {
    * a way that suits your application.
    */
   app.post('/save-details', (req, res) => {
-    // TODO: Read POSTed form data and do something useful
-  });
+    
+    var params = {
+        Bucket: S3_BUCKET,
+        Key: fileName,
+        Body: "Hello"
+    };
+
+    s3.putObject(s3params, function (err, data) {
+        if (err) {
+            console.log("Error uploading data: ", err);
+        } else {
+            console.log("Successfully uploaded data to myBucket/myKey");
+        }
+    });
+});
 
 app.get('', (req, res) =>{
     res.render('index', {
